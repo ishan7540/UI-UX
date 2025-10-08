@@ -1,1 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GlobeTrek Travel — Home</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="nav" id="mainNav">
+    <a href="index.html" data-link="home" class="nav-link">Home</a>
+    <a href="packages.html" data-link="packages" class="nav-link">Packages</a>
+    <a href="gallery.html" data-link="gallery" class="nav-link">Gallery</a>
+    <a href="about.html" data-link="about" class="nav-link">About / Contact</a>
+  </nav>
 
+  <header class="banner">
+    <div class="banner-inner">
+      <h1>GlobeTrek Travel</h1>
+      <p>Your next adventure starts here — curated packages for every traveller.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <h2>Why Travel With Us?</h2>
+      <ul>
+        <li>Handpicked packages with best-value pricing.</li>
+        <li>Flexible booking and transparent costs.</li>
+        <li>Local guides and sustainable experiences.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Featured Packages</h2>
+      <div id="featured" class="cards"></div>
+    </section>
+
+    <section>
+      <h2>Quick Gallery</h2>
+      <div class="thumb-row">
+        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=60" alt="Beach" data-large="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80" class="thumb" />
+        <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&q=60" alt="Mountains" data-large="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200&q=80" class="thumb" />
+        <img src="https://www.shutterstock.com/image-photo/business-bay-dubai-night-600nw-2476138621.jpg" alt="City" data-large="https://images.unsplash.com/photo-1505765054941-2f6f8d2f0e6d?w=1200&q=80" class="thumb" />
+        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=60" alt="Beach" data-large="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80" class="thumb" />
+        <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&q=60" alt="Mountains" data-large="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200&q=80" class="thumb" />
+        <img src="https://www.shutterstock.com/image-photo/business-bay-dubai-night-600nw-2476138621.jpg" alt="City" data-large="https://images.unsplash.com/photo-1505765054941-2f6f8d2f0e6d?w=1200&q=80" class="thumb" />
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© GlobeTrek Travel</p>
+  </footer>
+
+  <script src="shared.js"></script>
+  <script>
+    // Render a couple featured packages using the shared packages data
+    const featuredEl = document.getElementById('featured');
+    const featured = packages.slice(0,3);
+    featured.forEach(p => {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `<h3>${p.destination}</h3><p>${p.durationDays} days · ₹${p.basePrice.toLocaleString()}</p><p class="muted">Season: ${p.season}</p><p>Final: ₹${computeFinalPrice(p).toLocaleString()}</p>`;
+      featuredEl.appendChild(card);
+    });
+    initNav();
+    initGalleryModal();
+  </script>
+</body>
+</html>

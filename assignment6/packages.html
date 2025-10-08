@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GlobeTrek Travel — Packages</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="nav" id="mainNav">
+    <a href="index.html" data-link="home" class="nav-link">Home</a>
+    <a href="packages.html" data-link="packages" class="nav-link">Packages</a>
+    <a href="gallery.html" data-link="gallery" class="nav-link">Gallery</a>
+    <a href="about.html" data-link="about" class="nav-link">About / Contact</a>
+  </nav>
+
+  <main class="container">
+    <h1>Tour Packages</h1>
+
+    <section>
+      <table id="packagesTable" class="table">
+        <thead>
+          <tr><th>ID</th><th>Destination</th><th>Duration (days)</th><th>Base Price (₹)</th><th>Season</th><th>Final Price (₹)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="booking">
+      <h2>Booking Price Estimator</h2>
+      <form id="bookingForm" novalidate>
+        <div class="field">
+          <label for="name">Full name *</label>
+          <input id="name" name="name" required />
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label for="checkin">Check-in *</label>
+            <input id="checkin" type="date" required />
+          </div>
+          <div class="field">
+            <label for="checkout">Check-out *</label>
+            <input id="checkout" type="date" required />
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label for="packageSelect">Package *</label>
+            <select id="packageSelect" required></select>
+          </div>
+          <div class="field">
+            <label for="guests">Guests</label>
+            <input id="guests" type="number" min="1" value="2" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="promo">Promo Code</label>
+          <input id="promo" placeholder="e.g. EARLYBIRD" />
+        </div>
+
+        <div class="estimator">
+          <p>Nights: <span id="nights">0</span></p>
+          <p>Base total: ₹<span id="baseTotal">0</span></p>
+          <p>Modifiers: <span id="modText">—</span></p>
+          <h3>Total Estimate: ₹<span id="total">0</span></h3>
+        </div>
+
+        <div class="actions">
+          <button id="submitBtn" type="submit">Submit Booking</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="shared.js"></script>
+  <script>
+    // Render packages table and wire booking estimator
+    const tbody = document.querySelector('#packagesTable tbody');
+    function renderPackagesTable(){
+      tbody.innerHTML = '';
+      packages.forEach(p => {
+        const tr = document.createElement('tr');
+        const final = computeFinalPrice(p);
+        tr.innerHTML = `<td>${p.id}</td><td>${p.destination}</td><td>${p.durationDays}</td><td>₹${p.basePrice.toLocaleString()}</td><td>${p.season}</td><td>₹${final.toLocaleString()}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Populate package select
+    const packageSelect = document.getElementById('packageSelect');
+    packages.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.destination} — ${p.durationDays}d — ₹${p.basePrice}`;
+      packageSelect.appendChild(opt);
+    });
+
+    // Booking estimator logic
+    const checkin = document.getElementById('checkin');
+    const checkout = document.getElementById('checkout');
+    const guests = document.getElementById('guests');
+    const promo = document.getElementById('promo');
+    const nightsEl = document.getElementById('nights');
+    const baseTotalEl = document.getElementById('baseTotal');
+    const modText = document.getElementById('modText');
+    const totalEl = document.getElementById('total');
+    const submitBtn = document.getElementById('submitBtn');
+    const bookingForm = document.getElementById('bookingForm');
+
+    function parseDateInput(val){ return val ? new Date(val) : null; }
+    function dateDiffDays(a,b){ if(!a||!b) return 0; const diff = (b - a) / (1000*60*60*24); return Math.max(0, Math.round(diff)); }
+
+    function calculateEstimate(){
+      const pkgId = packageSelect.value;
+      const pkg = packages.find(x=>x.id==pkgId);
+      const ci = parseDateInput(checkin.value);
+      const co = parseDateInput(checkout.value);
+      const n = dateDiffDays(ci, co);
+      nightsEl.textContent = n;
+      let base = (pkg ? pkg.basePrice : 0) * (n || pkg.durationDays || 1);
+      baseTotalEl.textContent = Math.round(base).toLocaleString();
+      // Modifiers
+      let modifiers = [];
+      // guest multiplier
+      const g = Number(guests.value) || 1;
+      let guestMult = 1;
+      if(g > 2){ guestMult = 1.2; modifiers.push('Guests > 2 (+20%)'); }
+      // weekend surcharge: +10% if any night falls on sat/sun
+      let weekendSurcharge = 0;
+      if(ci && co && n>0){
+        let anyWeekend = false;
+        for(let d=new Date(ci); d<co; d.setDate(d.getDate()+1)){
+          const day = d.getDay();
+          if(day===0 || day===6) anyWeekend = true;
+        }
+        if(anyWeekend){ weekendSurcharge = 0.10; modifiers.push('Weekend surcharge (+10%)'); }
+      }
+      // seasonal multiplier from package
+      const seasonMult = pkg ? (pkg.season==='peak' ? 1.25 : pkg.season==='low' ? 0.9 : 1) : 1;
+      if(seasonMult!==1) modifiers.push(`Seasonal (${pkg.season}) x${seasonMult}`);
+      // promo codes
+      const promoCode = (promo.value || '').trim().toUpperCase();
+      let promoDisc = 0;
+      switch(promoCode){
+        case 'EARLYBIRD': promoDisc = 0.10; modifiers.push('EARLYBIRD -10%'); break;
+        case 'WINTER': promoDisc = 0.05; modifiers.push('WINTER -5%'); break;
+        case 'NONE': promoDisc = 0; break;
+        default: if(promoCode) modifiers.push('Unknown promo (no discount)'); break;
+      }
+      // compute total
+      let total = base * guestMult * seasonMult * (1 + weekendSurcharge);
+      total = total * (1 - promoDisc);
+      modText.textContent = modifiers.join(' · ') || '—';
+      totalEl.textContent = Math.round(total).toLocaleString();
+      // validation: required fields & dates valid
+      let valid = true;
+      if(!bookingForm.name.value.trim() || !ci || !co || co<=ci) valid = false;
+      submitBtn.disabled = !valid;
+    }
+
+    // wire events
+    [checkin, checkout, guests, promo, packageSelect, bookingForm.name].forEach(el => el.addEventListener('input', calculateEstimate));
+    bookingForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if(submitBtn.disabled) return alert('Please fill required fields with valid dates.');
+      alert('Booking submitted! (demo) — check console for details.');
+      console.log('Booking data:', {
+        name: bookingForm.name.value.trim(),
+        checkin: checkin.value,
+        checkout: checkout.value,
+        packageId: packageSelect.value,
+        guests: guests.value,
+        promo: promo.value
+      });
+      bookingForm.reset();
+      calculateEstimate();
+    });
+
+    // initial render
+    renderPackagesTable();
+    calculateEstimate();
+    initNav();
+  </script>
+</body>
+</html>
